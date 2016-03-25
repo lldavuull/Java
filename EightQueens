@@ -1,0 +1,188 @@
+//物件導向版八皇后，可自訂棋子種類，棋盤大小。
+
+public class QueenChess {
+  public static void main(String args[]){
+    chessboard c=new chessboard(8,8);
+    c.putChessUnit( 0, new chessqueen());
+  }
+}
+
+interface chessunit {
+
+    public chesslaw[] getchesslaw();
+
+    public char getString();
+    public int getchess();
+    public void setchess(int set);
+}
+//皇后的物件類別，擁有移動方式的規則
+
+class chessqueen implements chessunit {
+
+    //皇后的移動方式為直、橫、斜，規則表示法為(x方向,x步數,y方向,y步數) 1表示走一步，-1表示無限多步，例如馬的右上上表示為(1,1,2,1)，城堡的往下走表示為(0,0,-1,-1)，主教的左下表示為(-1,-1,-1,-1)
+    public chesslaw law[];
+
+    chessqueen() {
+        law = new chesslaw[8];
+        law[0] = new chesslaw(1, -1, 0, 0);//右,無限步
+        law[1] = new chesslaw(1, -1, 1, -1);//右上,無限步
+        law[2] = new chesslaw(0, 0, 1, -1);//上,無限步
+        law[3] = new chesslaw(-1, -1, 1, -1);//左上,無限步
+        law[4] = new chesslaw(-1, -1, 0, 0);//左,無限步
+        law[5] = new chesslaw(-1, -1, -1, -1);//左下,無限步
+        law[6] = new chesslaw(0, 0, -1, -1);//下,無限步
+        law[7] = new chesslaw(1, -1, -1, -1);//右下,無限步
+    }
+
+    public chesslaw[] getchesslaw() {
+        return law;
+    }
+
+    public char getString() {
+        return '后';
+    }
+    public int getchess(){return 1;}
+    public void setchess(int set){}
+}
+
+// 石頭棋子，表示無法再放置任何東西(即會被棋他的子吃掉)
+class chessstone implements chessunit {
+    private int stone;
+    chessstone(){
+        stone=1;
+    }
+    public int getchess(){
+       return stone; 
+    }
+    public void setchess(int stone){
+        this.stone=stone;
+    }
+    public chesslaw[] getchesslaw() {
+        return null;
+    }
+
+    public char getString() {
+        return 'Ｏ';
+    }
+}
+
+//走法的物件
+//規則表示法為(x方向,x步數,y方向,y步數)  步數表示法: 1為走一步，-1表示無限多步，0表示不動，例如卒的表示為(0,0,1,1)+(0,0,2,1)[假設可以永遠走兩步]，國王的左下走表示為(-1,1,-1,1)，馬的右下下表示為(1,1,-2,1)
+class chesslaw {
+
+    private int x, y, xl, yl;
+
+    chesslaw(int x, int xl, int y, int yl) {
+        this.x = x;
+        this.xl = xl;
+        this.y = y;
+        this.yl = yl;
+    }
+
+    int[] get() {
+        int get[] = {x, xl, y, yl};
+        return get;
+    }
+}
+
+
+//棋盤，宣告時必須先設置尺寸 chessboard(int x, int y) , 之後可以用來放棋子
+class chessboard {
+
+    private int x, y;
+    chessunit[][] cb;
+
+    chessboard(int x, int y) {
+        this.x = x;
+        this.y = y;
+        cb = new chessunit[x][y];
+    }
+
+    //在x,y中放置棋子cu，並判斷是否能放
+    public void putChessUnit(int x, chessunit cu) {
+                for(int y=0;y<this.y;y++){
+                    if (cb[x][y] == null) { //若在x,y上沒有任何東西... 就可以放棋子
+                        putStone(x,y,cu);
+                        cb[x][y] = cu; //在x,y中放進棋子cu
+                        if(x==(this.x-1)){
+                            getChessBoard();//印出棋盤
+                        }else{
+                        putChessUnit(x+1,cu);//在下一步放皇后
+                    }
+                        removeStone(x,y,cu);
+                        cb[x][y] = null;
+                        //撤銷放棋子的那一步
+                }
+        }
+    }
+    private void removeStone(int x,int y,chessunit cu){
+        for (chesslaw c : cu.getchesslaw()) {  //讀取cu的規則
+                int i[] = c.get();  //讀取cu的規則的詳細四個數字
+                if (i[1] == -1 || i[3] == -1) { // 若x,y要求走無限多步...
+                    for (int l = 1; l * i[0] + x < this.x && l * i[2] + y < this.y && l * i[0] + x >= 0 && l * i[2] + y >= 0; l++) { //x,y不能超過棋盤大小，也不能超出棋盤範圍
+                        if(cb[x + l * i[0]][y + l * i[2]].getchess()==1){//在路徑上石頭數為1時
+                            cb[x + l * i[0]][y + l * i[2]] =null; //在路徑上移除石頭
+                        }else
+                        {
+                            cb[x + l * i[0]][y + l * i[2]].setchess(cb[x + l * i[0]][y + l * i[2]] .getchess()-1); //在路徑上石頭數-1
+                        }
+                    }
+                } else {//若不是無限多步，只有一步的話...
+                    if(x + i[0] * i[1]<this.x&&x + i[0] * i[1]>=0&&y + i[2] * i[3]<this.y&&y + i[2] * i[3]>=0){ //要放的地方不能超過棋盤範圍
+                        if( cb[x + i[0] * i[1]][y + i[2] * i[3]].getchess()==1){
+                             cb[x + i[0] * i[1]][y + i[2] * i[3]] =null;//在那一步上移除石頭
+                        }else{
+                        cb[x + i[0] * i[1]][y + i[2] * i[3]].setchess( cb[x + i[0] * i[1]][y + i[2] * i[3]].getchess()-1); //在那一步上石頭數-1
+                        }
+                    }
+                }
+            }
+    }
+    //在位於(x,y)棋子cu能攻擊到的位置上放石頭
+    private void putStone(int x,int y,chessunit cu){
+        for (chesslaw c : cu.getchesslaw()) {  //讀取cu的規則
+                int i[] = c.get();  //讀取cu的規則的詳細四個數字
+                if (i[1] == -1 || i[3] == -1) { // 若x,y要求走無限多步...
+                    for (int l = 1; l * i[0] + x < this.x && l * i[2] + y < this.y && l * i[0] + x >= 0 && l * i[2] + y >= 0; l++) { //x,y不能超過棋盤大小，也不能超出棋盤範圍
+                        if(cb[x + l * i[0]][y + l * i[2]]!=null&&cb[x + l * i[0]][y + l * i[2]].getString()=='Ｏ'){
+                                cb[x + l * i[0]][y + l * i[2]].setchess(cb[x + l * i[0]][y + l * i[2]].getchess()+1); //在路徑上石頭數+1
+                            }else{
+                                cb[x + l * i[0]][y + l * i[2]] = new chessstone(); //在路徑上放石頭
+                        }
+                    }
+                } else {//若不是無限多步，只有一步的話...
+                    if(x + i[0] * i[1]>=0&&x + i[0] * i[1]<this.x&&y + i[2] * i[3]>=0&&y + i[2] * i[3]<this.y){
+                    if(cb[x + i[0] * i[1]][y + i[2] * i[3]].getString()=='Ｏ'){
+                        cb[x + i[0] * i[1]][y + i[2] * i[3]].setchess(cb[x + i[0] * i[1]][y + i[2] * i[3]].getchess()+1); //在那一步上石頭數+1
+                    }
+                    cb[x + i[0] * i[1]][y + i[2] * i[3]] = new chessstone(); //在那一步上放石頭
+                    }
+                }
+            }
+    }
+    
+    public void getChessBoard() {//讀取棋盤目前狀態
+        for (int i = 0; i < this.x; i++) {
+            for (int j = 0; j < this.y; j++) {
+                if (cb[i][j] != null) {
+                    System.out.print(cb[i][j].getString());
+                } else {
+                    System.out.print("。");
+                }
+            }
+            System.out.println();
+        }
+
+        System.out.println();
+    }
+
+    //取得棋盤的X尺寸
+    public int getChessBoardX() {
+        return x;
+    }
+
+    //取得棋盤的Y尺寸
+    public int getChessBoardY() {
+        return y;
+    }
+}
